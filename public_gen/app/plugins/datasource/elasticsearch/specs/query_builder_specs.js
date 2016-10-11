@@ -211,6 +211,16 @@ System.register(['test/lib/common', '../query_builder'], function(exports_1) {
                     common_1.expect(firstLevel.aggs["2"].derivative).not.to.be(undefined);
                     common_1.expect(firstLevel.aggs["2"].derivative.buckets_path).to.be("3");
                 });
+                common_1.it('with adhoc filters', function () {
+                    var query = builder.build({
+                        metrics: [{ type: 'Count', id: '0' }],
+                        timeField: '@timestamp',
+                        bucketAggs: [{ type: 'date_histogram', field: '@timestamp', id: '3' }],
+                    }, [
+                        { key: 'key1', operator: '=', value: 'value1' }
+                    ]);
+                    common_1.expect(query.query.filtered.filter.bool.must[1].term["key1"]).to.be("value1");
+                });
             });
         }
     }

@@ -1,6 +1,6 @@
 ///<reference path="../../../headers/common.d.ts" />
-System.register(['lodash', 'app/core/utils/datemath', './influx_series', './influx_query', './response_parser'], function(exports_1) {
-    var lodash_1, dateMath, influx_series_1, influx_query_1, response_parser_1;
+System.register(['lodash', 'app/core/utils/datemath', './influx_series', './influx_query', './response_parser', './query_builder'], function(exports_1) {
+    var lodash_1, dateMath, influx_series_1, influx_query_1, response_parser_1, query_builder_1;
     var InfluxDatasource;
     return {
         setters:[
@@ -18,6 +18,9 @@ System.register(['lodash', 'app/core/utils/datemath', './influx_series', './infl
             },
             function (response_parser_1_1) {
                 response_parser_1 = response_parser_1_1;
+            },
+            function (query_builder_1_1) {
+                query_builder_1 = query_builder_1_1;
             }],
         execute: function() {
             InfluxDatasource = (function () {
@@ -35,6 +38,7 @@ System.register(['lodash', 'app/core/utils/datemath', './influx_series', './infl
                     this.name = instanceSettings.name;
                     this.database = instanceSettings.database;
                     this.basicAuth = instanceSettings.basicAuth;
+                    this.withCredentials = instanceSettings.withCredentials;
                     this.interval = (instanceSettings.jsonData || {}).timeInterval;
                     this.supportAnnotations = true;
                     this.supportMetrics = true;
@@ -43,28 +47,38 @@ System.register(['lodash', 'app/core/utils/datemath', './influx_series', './infl
                 InfluxDatasource.prototype.query = function (options) {
                     var _this = this;
                     var timeFilter = this.getTimeFilter(options);
+                    var scopedVars = options.scopedVars ? lodash_1.default.cloneDeep(options.scopedVars) : {};
+                    var targets = lodash_1.default.cloneDeep(options.targets);
                     var queryTargets = [];
+                    var queryModel;
                     var i, y;
-                    var allQueries = lodash_1.default.map(options.targets, function (target) {
+                    var allQueries = lodash_1.default.map(targets, function (target) {
                         if (target.hide) {
                             return "";
                         }
                         queryTargets.push(target);
                         // build query
-                        var queryModel = new influx_query_1.default(target, _this.templateSrv, options.scopedVars);
-                        var query = queryModel.render(true);
-                        query = query.replace(/\$interval/g, (target.interval || options.interval));
-                        return query;
+                        scopedVars.interval = { value: target.interval || options.interval };
+                        queryModel = new influx_query_1.default(target, _this.templateSrv, scopedVars);
+                        return queryModel.render(true);
                     }).reduce(function (acc, current) {
                         if (current !== "") {
                             acc += ";" + current;
                         }
                         return acc;
                     });
+                    if (allQueries === '') {
+                        return this.$q.when({ data: [] });
+                    }
+                    // add global adhoc filters to timeFilter
+                    var adhocFilters = this.templateSrv.getAdhocFilters(this.name);
+                    if (adhocFilters.length > 0) {
+                        timeFilter += ' AND ' + queryModel.renderAdhocFilters(adhocFilters);
+                    }
                     // replace grafana variables
-                    allQueries = allQueries.replace(/\$timeFilter/g, timeFilter);
+                    scopedVars.timeFilter = { value: timeFilter };
                     // replace templated variables
-                    allQueries = this.templateSrv.replace(allQueries, options.scopedVars);
+                    allQueries = this.templateSrv.replace(allQueries, scopedVars);
                     return this._seriesQuery(allQueries).then(function (data) {
                         if (!data || !data.results) {
                             return [];
@@ -115,18 +129,24 @@ System.register(['lodash', 'app/core/utils/datemath', './influx_series', './infl
                 };
                 ;
                 InfluxDatasource.prototype.metricFindQuery = function (query) {
-                    var interpolated;
-                    try {
-                        interpolated = this.templateSrv.replace(query, null, 'regex');
-                    }
-                    catch (err) {
-                        return this.$q.reject(err);
-                    }
+                    var interpolated = this.templateSrv.replace(query, null, 'regex');
                     return this._seriesQuery(interpolated)
                         .then(lodash_1.default.curry(this.responseParser.parse)(query));
                 };
-                ;
+                InfluxDatasource.prototype.getTagKeys = function (options) {
+                    var queryBuilder = new query_builder_1.default({ measurement: '', tags: [] }, this.database);
+                    var query = queryBuilder.buildExploreQuery('TAG_KEYS');
+                    return this.metricFindQuery(query);
+                };
+                InfluxDatasource.prototype.getTagValues = function (options) {
+                    var queryBuilder = new query_builder_1.default({ measurement: '', tags: [] }, this.database);
+                    var query = queryBuilder.buildExploreQuery('TAG_VALUES', options.key);
+                    return this.metricFindQuery(query);
+                };
                 InfluxDatasource.prototype._seriesQuery = function (query) {
+                    if (!query) {
+                        return this.$q.when({ results: [] });
+                    }
                     return this._influxRequest('GET', '/query', { q: query, epoch: 'ms' });
                 };
                 InfluxDatasource.prototype.serializeParams = function (params) {
@@ -171,6 +191,9 @@ System.register(['lodash', 'app/core/utils/datemath', './influx_series', './infl
                         paramSerializer: this.serializeParams,
                     };
                     options.headers = options.headers || {};
+                    if (this.basicAuth || this.withCredentials) {
+                        options.withCredentials = true;
+                    }
                     if (self.basicAuth) {
                         options.headers.Authorization = self.basicAuth;
                     }

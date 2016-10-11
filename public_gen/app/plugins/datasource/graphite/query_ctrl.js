@@ -1,11 +1,11 @@
 ///<reference path="../../../headers/common.d.ts" />
-System.register(['./add_graphite_func', './func_editor', 'lodash', './gfunc', './parser', 'app/plugins/sdk'], function(exports_1) {
+System.register(['./add_graphite_func', './func_editor', 'lodash', './gfunc', './parser', 'app/plugins/sdk', 'app/core/app_events'], function(exports_1) {
     var __extends = (this && this.__extends) || function (d, b) {
         for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
-    var lodash_1, gfunc_1, parser_1, sdk_1;
+    var lodash_1, gfunc_1, parser_1, sdk_1, app_events_1;
     var GraphiteQueryCtrl;
     return {
         setters:[
@@ -22,6 +22,9 @@ System.register(['./add_graphite_func', './func_editor', 'lodash', './gfunc', '.
             },
             function (sdk_1_1) {
                 sdk_1 = sdk_1_1;
+            },
+            function (app_events_1_1) {
+                app_events_1 = app_events_1_1;
             }],
         execute: function() {
             GraphiteQueryCtrl = (function (_super) {
@@ -141,7 +144,7 @@ System.register(['./add_graphite_func', './func_editor', 'lodash', './gfunc', '.
                             }
                         }
                     }).catch(function (err) {
-                        _this.error = err.message || 'Failed to issue metric query';
+                        app_events_1.default.emit('alert-error', ['Error', err]);
                     });
                 };
                 GraphiteQueryCtrl.prototype.setSegmentFocus = function (segmentIndex) {
@@ -174,7 +177,7 @@ System.register(['./add_graphite_func', './func_editor', 'lodash', './gfunc', '.
                         altSegments.unshift(_this.uiSegmentSrv.newSegment('*'));
                         return altSegments;
                     }).catch(function (err) {
-                        _this.error = err.message || 'Failed to issue metric query';
+                        app_events_1.default.emit('alert-error', ['Error', err]);
                         return [];
                     });
                 };

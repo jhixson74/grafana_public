@@ -28,7 +28,7 @@ System.register(['angular', 'lodash'], function(exports_1) {
                 }
                 AppPageCtrl.prototype.initPage = function (app) {
                     this.appModel = app;
-                    this.page = lodash_1.default.findWhere(app.includes, { slug: this.$routeParams.slug });
+                    this.page = lodash_1.default.find(app.includes, { slug: this.$routeParams.slug });
                     this.appLogoUrl = app.info.logos.small;
                     pluginInfoCache[this.pluginId] = app;
                     if (!this.page) {

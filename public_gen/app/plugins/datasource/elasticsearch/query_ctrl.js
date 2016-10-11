@@ -60,7 +60,7 @@ System.register(['./bucket_agg', './metric_agg', 'angular', 'lodash', './query_d
                     }
                     text += 'Metrics: ';
                     lodash_1.default.each(metricAggs, function (metric, index) {
-                        var aggDef = lodash_1.default.findWhere(metricAggTypes, { value: metric.type });
+                        var aggDef = lodash_1.default.find(metricAggTypes, { value: metric.type });
                         text += aggDef.text + '(';
                         if (aggDef.requiresField) {
                             text += metric.field;
@@ -71,7 +71,7 @@ System.register(['./bucket_agg', './metric_agg', 'angular', 'lodash', './query_d
                         if (index === 0) {
                             text += ' Group by: ';
                         }
-                        var aggDef = lodash_1.default.findWhere(bucketAggTypes, { value: bucketAgg.type });
+                        var aggDef = lodash_1.default.find(bucketAggTypes, { value: bucketAgg.type });
                         text += aggDef.text + '(';
                         if (aggDef.requiresField) {
                             text += bucketAgg.field;

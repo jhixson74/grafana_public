@@ -1,5 +1,5 @@
 ///<reference path="../../../headers/common.d.ts" />
-System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', './influx_query', './query_part', 'app/plugins/sdk'], function(exports_1) {
+System.register(['angular', 'lodash', './query_builder', './influx_query', './query_part', 'app/plugins/sdk'], function(exports_1) {
     var __extends = (this && this.__extends) || function (d, b) {
         for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
         function __() { this.constructor = d; }
@@ -9,7 +9,6 @@ System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', 
     var InfluxQueryCtrl;
     return {
         setters:[
-            function (_1) {},
             function (angular_1_1) {
                 angular_1 = angular_1_1;
             },
@@ -112,20 +111,53 @@ System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', 
                     this.groupBySegment.html = plusButton.html;
                     this.panelCtrl.refresh();
                 };
-                InfluxQueryCtrl.prototype.removeGroupByPart = function (part, index) {
-                    this.queryModel.removeGroupByPart(part, index);
-                    this.panelCtrl.refresh();
-                };
                 InfluxQueryCtrl.prototype.addSelectPart = function (selectParts, cat, subitem) {
                     this.queryModel.addSelectPart(selectParts, subitem.value);
                     this.panelCtrl.refresh();
                 };
-                InfluxQueryCtrl.prototype.removeSelectPart = function (selectParts, part) {
-                    this.queryModel.removeSelectPart(selectParts, part);
-                    this.panelCtrl.refresh();
+                InfluxQueryCtrl.prototype.handleSelectPartEvent = function (selectParts, part, evt) {
+                    switch (evt.name) {
+                        case "get-param-options": {
+                            var fieldsQuery = this.queryBuilder.buildExploreQuery('FIELDS');
+                            return this.datasource.metricFindQuery(fieldsQuery)
+                                .then(this.transformToSegments(true))
+                                .catch(this.handleQueryError.bind(this));
+                        }
+                        case "part-param-changed": {
+                            this.panelCtrl.refresh();
+                            break;
+                        }
+                        case "action": {
+                            this.queryModel.removeSelectPart(selectParts, part);
+                            this.panelCtrl.refresh();
+                            break;
+                        }
+                        case "get-part-actions": {
+                            return this.$q.when([{ text: 'Remove', value: 'remove-part' }]);
+                        }
+                    }
                 };
-                InfluxQueryCtrl.prototype.selectPartUpdated = function () {
-                    this.panelCtrl.refresh();
+                InfluxQueryCtrl.prototype.handleGroupByPartEvent = function (part, index, evt) {
+                    switch (evt.name) {
+                        case "get-param-options": {
+                            var tagsQuery = this.queryBuilder.buildExploreQuery('TAG_KEYS');
+                            return this.datasource.metricFindQuery(tagsQuery)
+                                .then(this.transformToSegments(true))
+                                .catch(this.handleQueryError.bind(this));
+                        }
+                        case "part-param-changed": {
+                            this.panelCtrl.refresh();
+                            break;
+                        }
+                        case "action": {
+                            this.queryModel.removeGroupByPart(part, index);
+                            this.panelCtrl.refresh();
+                            break;
+                        }
+                        case "get-part-actions": {
+                            return this.$q.when([{ text: 'Remove', value: 'remove-part' }]);
+                        }
+                    }
                 };
                 InfluxQueryCtrl.prototype.fixTagSegments = function () {
                     var count = this.tagSegments.length;
@@ -157,25 +189,11 @@ System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', 
                     }
                     this.target.rawQuery = !this.target.rawQuery;
                 };
-                InfluxQueryCtrl.prototype.getMeasurements = function () {
-                    var query = this.queryBuilder.buildExploreQuery('MEASUREMENTS');
+                InfluxQueryCtrl.prototype.getMeasurements = function (measurementFilter) {
+                    var query = this.queryBuilder.buildExploreQuery('MEASUREMENTS', undefined, measurementFilter);
                     return this.datasource.metricFindQuery(query)
                         .then(this.transformToSegments(true))
                         .catch(this.handleQueryError.bind(this));
-                };
-                InfluxQueryCtrl.prototype.getPartOptions = function (part) {
-                    if (part.def.type === 'field') {
-                        var fieldsQuery = this.queryBuilder.buildExploreQuery('FIELDS');
-                        return this.datasource.metricFindQuery(fieldsQuery)
-                            .then(this.transformToSegments(true))
-                            .catch(this.handleQueryError.bind(this));
-                    }
-                    if (part.def.type === 'tag') {
-                        var tagsQuery = this.queryBuilder.buildExploreQuery('TAG_KEYS');
-                        return this.datasource.metricFindQuery(tagsQuery)
-                            .then(this.transformToSegments(true))
-                            .catch(this.handleQueryError.bind(true));
-                    }
                 };
                 InfluxQueryCtrl.prototype.handleQueryError = function (err) {
                     this.error = err.message || 'Failed to issue metric query';
@@ -207,7 +225,7 @@ System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', 
                             return this.$q.when(this.uiSegmentSrv.newOperators(['=~', '!~']));
                         }
                         else {
-                            return this.$q.when(this.uiSegmentSrv.newOperators(['=', '<>', '<', '>']));
+                            return this.$q.when(this.uiSegmentSrv.newOperators(['=', '!=', '<>', '<', '>']));
                         }
                     }
                     var query, addTemplateVars;
@@ -234,10 +252,6 @@ System.register(['./query_part_editor', 'angular', 'lodash', './query_builder', 
                     return this.datasource.metricFindQuery(fieldsQuery)
                         .then(this.transformToSegments(false))
                         .catch(this.handleQueryError);
-                };
-                InfluxQueryCtrl.prototype.setFill = function (fill) {
-                    this.target.fill = fill;
-                    this.panelCtrl.refresh();
                 };
                 InfluxQueryCtrl.prototype.tagSegmentUpdated = function (segment, index) {
                     this.tagSegments[index] = segment;

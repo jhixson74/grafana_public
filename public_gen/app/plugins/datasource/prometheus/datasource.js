@@ -3,7 +3,7 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
     var lodash_1, moment_1, dateMath, metric_find_query_1;
     var durationSplitRegexp;
     /** @ngInject */
-    function PrometheusDatasource(instanceSettings, $q, backendSrv, templateSrv) {
+    function PrometheusDatasource(instanceSettings, $q, backendSrv, templateSrv, timeSrv) {
         this.type = 'prometheus';
         this.editorSrc = 'app/features/prometheus/partials/query.editor.html';
         this.name = instanceSettings.name;
@@ -13,10 +13,11 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
         this.basicAuth = instanceSettings.basicAuth;
         this.withCredentials = instanceSettings.withCredentials;
         this.lastErrors = {};
-        this._request = function (method, url) {
+        this._request = function (method, url, requestId) {
             var options = {
                 url: this.url + url,
-                method: method
+                method: method,
+                requestId: requestId,
             };
             if (this.basicAuth || this.withCredentials) {
                 options.withCredentials = true;
@@ -28,7 +29,7 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
             }
             return backendSrv.datasourceRequest(options);
         };
-        function regexEscape(value) {
+        function prometheusSpecialRegexEscape(value) {
             return value.replace(/[\\^$*+?.()|[\]{}]/g, '\\\\$&');
         }
         this.interpolateQueryExpr = function (value, variable, defaultFormatFn) {
@@ -37,29 +38,31 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
                 return value;
             }
             if (typeof value === 'string') {
-                return regexEscape(value);
+                return prometheusSpecialRegexEscape(value);
             }
-            var escapedValues = lodash_1.default.map(value, regexEscape);
+            var escapedValues = lodash_1.default.map(value, prometheusSpecialRegexEscape);
             return escapedValues.join('|');
         };
         // Called once per panel (graph)
         this.query = function (options) {
+            var _this = this;
             var self = this;
-            var start = getPrometheusTime(options.range.from, false);
-            var end = getPrometheusTime(options.range.to, true);
+            var start = this.getPrometheusTime(options.range.from, false);
+            var end = this.getPrometheusTime(options.range.to, true);
             var queries = [];
             var activeTargets = [];
             options = lodash_1.default.clone(options);
-            lodash_1.default.each(options.targets, lodash_1.default.bind(function (target) {
+            lodash_1.default.each(options.targets, function (target) {
                 if (!target.expr || target.hide) {
                     return;
                 }
                 activeTargets.push(target);
                 var query = {};
                 query.expr = templateSrv.replace(target.expr, options.scopedVars, self.interpolateQueryExpr);
-                var interval = target.interval || options.interval;
+                query.requestId = options.panelId + target.refId;
+                var interval = templateSrv.replace(target.interval, options.scopedVars) || options.interval;
                 var intervalFactor = target.intervalFactor || 1;
-                target.step = query.step = this.calculateInterval(interval, intervalFactor);
+                target.step = query.step = _this.calculateInterval(interval, intervalFactor);
                 var range = Math.ceil(end - start);
                 // Prometheus drop query if range/step > 11000
                 // calibrate step if it is too big
@@ -67,18 +70,17 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
                     target.step = query.step = Math.ceil(range / 11000);
                 }
                 queries.push(query);
-            }, this));
+            });
             // No valid targets, return the empty result to save a round trip.
             if (lodash_1.default.isEmpty(queries)) {
                 var d = $q.defer();
                 d.resolve({ data: [] });
                 return d.promise;
             }
-            var allQueryPromise = lodash_1.default.map(queries, lodash_1.default.bind(function (query) {
-                return this.performTimeSeriesQuery(query, start, end);
-            }, this));
-            return $q.all(allQueryPromise)
-                .then(function (allResponse) {
+            var allQueryPromise = lodash_1.default.map(queries, function (query) {
+                return _this.performTimeSeriesQuery(query, start, end);
+            });
+            return $q.all(allQueryPromise).then(function (allResponse) {
                 var result = [];
                 lodash_1.default.each(allResponse, function (response, index) {
                     if (response.status === 'error') {
@@ -94,8 +96,11 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
             });
         };
         this.performTimeSeriesQuery = function (query, start, end) {
+            if (start > end) {
+                throw { message: 'Invalid time range' };
+            }
             var url = '/api/v1/query_range?query=' + encodeURIComponent(query.expr) + '&start=' + start + '&end=' + end + '&step=' + query.step;
-            return this._request('GET', url);
+            return this._request('GET', url, query.requestId);
         };
         this.performSuggestQuery = function (query) {
             var url = '/api/v1/label/__name__/values';
@@ -111,12 +116,12 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
             }
             var interpolated;
             try {
-                interpolated = templateSrv.replace(query);
+                interpolated = templateSrv.replace(query, {}, this.interpolateQueryExpr);
             }
             catch (err) {
                 return $q.reject(err);
             }
-            var metricFindQuery = new metric_find_query_1.default(this, interpolated);
+            var metricFindQuery = new metric_find_query_1.default(this, interpolated, timeSrv);
             return metricFindQuery.process();
         };
         this.annotationQuery = function (options) {
@@ -139,8 +144,8 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
                 expr: interpolated,
                 step: '60s'
             };
-            var start = getPrometheusTime(options.range.from, false);
-            var end = getPrometheusTime(options.range.to, true);
+            var start = this.getPrometheusTime(options.range.from, false);
+            var end = this.getPrometheusTime(options.range.to, true);
             var self = this;
             return this.performTimeSeriesQuery(query, start, end).then(function (results) {
                 var eventList = [];
@@ -148,7 +153,7 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
                 lodash_1.default.each(results.data.data.result, function (series) {
                     var tags = lodash_1.default.chain(series.metric)
                         .filter(function (v, k) {
-                        return lodash_1.default.contains(tagKeys, k);
+                        return lodash_1.default.includes(tagKeys, k);
                     }).value();
                     lodash_1.default.each(series.values, function (value) {
                         if (value[1] === '1') {
@@ -207,38 +212,31 @@ System.register(['lodash', 'moment', 'app/core/utils/datemath', './metric_find_q
             if (lodash_1.default.isUndefined(options) || lodash_1.default.isEmpty(options.legendFormat)) {
                 return this.getOriginalMetricName(labelData);
             }
-            return this.renderTemplate(options.legendFormat, labelData) || '{}';
+            return this.renderTemplate(templateSrv.replace(options.legendFormat), labelData) || '{}';
         };
-        this.renderTemplate = function (format, data) {
-            var originalSettings = lodash_1.default.templateSettings;
-            lodash_1.default.templateSettings = {
-                interpolate: /\{\{(.+?)\}\}/g
-            };
-            var template = lodash_1.default.template(templateSrv.replace(format));
-            var result;
-            try {
-                result = template(data);
-            }
-            catch (e) {
-                result = null;
-            }
-            lodash_1.default.templateSettings = originalSettings;
-            return result;
+        this.renderTemplate = function (aliasPattern, aliasData) {
+            var aliasRegex = /\{\{\s*(.+?)\s*\}\}/g;
+            return aliasPattern.replace(aliasRegex, function (match, g1) {
+                if (aliasData[g1]) {
+                    return aliasData[g1];
+                }
+                return g1;
+            });
         };
         this.getOriginalMetricName = function (labelData) {
             var metricName = labelData.__name__ || '';
             delete labelData.__name__;
-            var labelPart = lodash_1.default.map(lodash_1.default.pairs(labelData), function (label) {
+            var labelPart = lodash_1.default.map(lodash_1.default.toPairs(labelData), function (label) {
                 return label[0] + '="' + label[1] + '"';
             }).join(',');
             return metricName + '{' + labelPart + '}';
         };
-        function getPrometheusTime(date, roundUp) {
+        this.getPrometheusTime = function (date, roundUp) {
             if (lodash_1.default.isString(date)) {
                 date = dateMath.parse(date, roundUp);
             }
             return Math.ceil(date.valueOf() / 1000);
-        }
+        };
     }
     exports_1("PrometheusDatasource", PrometheusDatasource);
     return {

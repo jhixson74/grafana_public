@@ -1,7 +1,10 @@
-System.register(['test/lib/common', 'moment', 'angular', 'test/specs/helpers', "../datasource"], function(exports_1) {
-    var common_1, moment_1, angular_1, helpers_1, datasource_1;
+System.register(['lodash', 'test/lib/common', 'moment', 'angular', 'test/specs/helpers', "../datasource"], function(exports_1) {
+    var lodash_1, common_1, moment_1, angular_1, helpers_1, datasource_1;
     return {
         setters:[
+            function (lodash_1_1) {
+                lodash_1 = lodash_1_1;
+            },
             function (common_1_1) {
                 common_1 = common_1_1;
             },
@@ -61,8 +64,8 @@ System.register(['test/lib/common', 'moment', 'angular', 'test/specs/helpers', "
                         };
                         ctx.ds.query({
                             range: {
-                                from: moment_1.default([2015, 4, 30, 10]),
-                                to: moment_1.default([2015, 5, 1, 10])
+                                from: moment_1.default.utc([2015, 4, 30, 10]),
+                                to: moment_1.default.utc([2015, 5, 1, 10])
                             },
                             targets: [{ bucketAggs: [], metrics: [], query: 'escape\\:test' }]
                         });
@@ -100,6 +103,96 @@ System.register(['test/lib/common', 'moment', 'angular', 'test/specs/helpers', "
                     common_1.it('should set size', function () {
                         var body = angular_1.default.fromJson(parts[1]);
                         common_1.expect(body.size).to.be(500);
+                    });
+                });
+                common_1.describe('When getting fields', function () {
+                    var requestOptions, parts, header;
+                    common_1.beforeEach(function () {
+                        createDatasource({ url: 'http://es.com', index: 'metricbeat' });
+                        ctx.backendSrv.datasourceRequest = function (options) {
+                            requestOptions = options;
+                            return ctx.$q.when({ data: {
+                                    metricbeat: {
+                                        mappings: {
+                                            metricsets: {
+                                                _all: {},
+                                                properties: {
+                                                    '@timestamp': { type: 'date' },
+                                                    beat: {
+                                                        properties: {
+                                                            name: { type: 'string' },
+                                                            hostname: { type: 'string' },
+                                                        }
+                                                    },
+                                                    system: {
+                                                        properties: {
+                                                            cpu: {
+                                                                properties: {
+                                                                    system: { type: 'float' },
+                                                                    user: { type: 'float' },
+                                                                }
+                                                            },
+                                                            process: {
+                                                                properties: {
+                                                                    cpu: {
+                                                                        properties: {
+                                                                            total: { type: 'float' }
+                                                                        }
+                                                                    },
+                                                                    name: { type: 'string' },
+                                                                }
+                                                            },
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } });
+                        };
+                    });
+                    common_1.it('should return nested fields', function () {
+                        ctx.ds.getFields({
+                            find: 'fields',
+                            query: '*'
+                        }).then(function (fieldObjects) {
+                            var fields = lodash_1.default.map(fieldObjects, 'text');
+                            common_1.expect(fields).to.eql([
+                                '@timestamp',
+                                'beat.name',
+                                'beat.hostname',
+                                'system.cpu.system',
+                                'system.cpu.user',
+                                'system.process.cpu.total',
+                                'system.process.name'
+                            ]);
+                        });
+                        ctx.$rootScope.$apply();
+                    });
+                    common_1.it('should return fields related to query type', function () {
+                        ctx.ds.getFields({
+                            find: 'fields',
+                            query: '*',
+                            type: 'number'
+                        }).then(function (fieldObjects) {
+                            var fields = lodash_1.default.map(fieldObjects, 'text');
+                            common_1.expect(fields).to.eql([
+                                'system.cpu.system',
+                                'system.cpu.user',
+                                'system.process.cpu.total'
+                            ]);
+                        });
+                        ctx.ds.getFields({
+                            find: 'fields',
+                            query: '*',
+                            type: 'date'
+                        }).then(function (fieldObjects) {
+                            var fields = lodash_1.default.map(fieldObjects, 'text');
+                            common_1.expect(fields).to.eql([
+                                '@timestamp'
+                            ]);
+                        });
+                        ctx.$rootScope.$apply();
                     });
                 });
             });

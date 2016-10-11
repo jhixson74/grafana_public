@@ -10,6 +10,7 @@ export default class InfluxDatasource {
     name: string;
     database: any;
     basicAuth: any;
+    withCredentials: any;
     interval: any;
     supportAnnotations: boolean;
     supportMetrics: boolean;
@@ -19,6 +20,8 @@ export default class InfluxDatasource {
     query(options: any): any;
     annotationQuery(options: any): any;
     metricFindQuery(query: any): any;
+    getTagKeys(options: any): any;
+    getTagValues(options: any): any;
     _seriesQuery(query: any): any;
     serializeParams(params: any): any;
     testDatasource(): any;

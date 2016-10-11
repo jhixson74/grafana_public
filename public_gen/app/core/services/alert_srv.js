@@ -29,7 +29,7 @@ System.register(['angular', 'lodash', 'app/core/core_module', 'app/core/app_even
                 AlertSrv.prototype.init = function () {
                     var _this = this;
                     this.$rootScope.onAppEvent('alert-error', function (e, alert) {
-                        _this.set(alert[0], alert[1], 'error', 0);
+                        _this.set(alert[0], alert[1], 'error', 7000);
                     }, this.$rootScope);
                     this.$rootScope.onAppEvent('alert-warning', function (e, alert) {
                         _this.set(alert[0], alert[1], 'warning', 5000);
@@ -37,13 +37,19 @@ System.register(['angular', 'lodash', 'app/core/core_module', 'app/core/app_even
                     this.$rootScope.onAppEvent('alert-success', function (e, alert) {
                         _this.set(alert[0], alert[1], 'success', 3000);
                     }, this.$rootScope);
+                    app_events_1.default.on('alert-error', function (options) {
+                        _this.set(options[0], options[1], 'error', 7000);
+                    });
                     app_events_1.default.on('confirm-modal', this.showConfirmModal.bind(this));
-                    this.$rootScope.onAppEvent('confirm-modal', function (e, data) {
-                        _this.showConfirmModal(data);
-                    }, this.$rootScope);
                 };
                 AlertSrv.prototype.set = function (title, text, severity, timeout) {
                     var _this = this;
+                    if (lodash_1.default.isObject(text)) {
+                        console.log('alert error', text);
+                        if (text.statusText) {
+                            text = "HTTP Error (" + text.status + ") " + text.statusText;
+                        }
+                    }
                     var newAlert = {
                         title: title || '',
                         text: text || '',
@@ -73,13 +79,24 @@ System.register(['angular', 'lodash', 'app/core/core_module', 'app/core/app_even
                 };
                 AlertSrv.prototype.showConfirmModal = function (payload) {
                     var scope = this.$rootScope.$new();
+                    scope.onConfirm = function () {
+                        payload.onConfirm();
+                        scope.dismiss();
+                    };
+                    scope.updateConfirmText = function (value) {
+                        scope.confirmTextValid = payload.confirmText.toLowerCase() === value.toLowerCase();
+                    };
                     scope.title = payload.title;
                     scope.text = payload.text;
                     scope.text2 = payload.text2;
+                    scope.confirmText = payload.confirmText;
                     scope.onConfirm = payload.onConfirm;
+                    scope.onAltAction = payload.onAltAction;
+                    scope.altActionText = payload.altActionText;
                     scope.icon = payload.icon || "fa-check";
                     scope.yesText = payload.yesText || "Yes";
                     scope.noText = payload.noText || "Cancel";
+                    scope.confirmTextValid = scope.confirmText ? false : true;
                     var confirmModal = this.$modal({
                         template: 'public/app/partials/confirm_modal.html',
                         persist: false,

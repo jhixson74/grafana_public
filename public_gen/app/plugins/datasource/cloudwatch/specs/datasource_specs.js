@@ -81,6 +81,32 @@ System.register(["../datasource", 'test/lib/common', 'test/specs/helpers'], func
                         });
                         ctx.$rootScope.$apply();
                     });
+                    common_1.it('should generate the correct query with interval variable', function (done) {
+                        ctx.templateSrv.data = {
+                            period: '10m'
+                        };
+                        var query = {
+                            range: { from: 'now-1h', to: 'now' },
+                            targets: [
+                                {
+                                    region: 'us-east-1',
+                                    namespace: 'AWS/EC2',
+                                    metricName: 'CPUUtilization',
+                                    dimensions: {
+                                        InstanceId: 'i-12345678'
+                                    },
+                                    statistics: ['Average'],
+                                    period: '[[period]]'
+                                }
+                            ]
+                        };
+                        ctx.ds.query(query).then(function () {
+                            var params = requestParams.data.parameters;
+                            common_1.expect(params.period).to.be(600);
+                            done();
+                        });
+                        ctx.$rootScope.$apply();
+                    });
                     common_1.it('should return series list', function (done) {
                         ctx.ds.query(query).then(function (result) {
                             common_1.expect(result.data[0].target).to.be('CPUUtilization_Average');
@@ -95,6 +121,35 @@ System.register(["../datasource", 'test/lib/common', 'test/specs/helpers'], func
                             done();
                         });
                         ctx.$rootScope.$apply();
+                    });
+                    common_1.it('should generate the correct targets by expanding template variables', function () {
+                        var templateSrv = {
+                            variables: [
+                                {
+                                    name: 'instance_id',
+                                    options: [
+                                        { value: 'i-23456789', selected: false },
+                                        { value: 'i-34567890', selected: true }
+                                    ]
+                                }
+                            ],
+                            variableExists: function (e) { return true; },
+                            containsVariable: function (str, variableName) { return str.indexOf('$' + variableName) !== -1; }
+                        };
+                        var targets = [
+                            {
+                                region: 'us-east-1',
+                                namespace: 'AWS/EC2',
+                                metricName: 'CPUUtilization',
+                                dimensions: {
+                                    InstanceId: '$instance_id'
+                                },
+                                statistics: ['Average'],
+                                period: 300
+                            }
+                        ];
+                        var result = ctx.ds.expandTemplateVariable(targets, templateSrv);
+                        common_1.expect(result[0].dimensions.InstanceId).to.be('i-34567890');
                     });
                 });
                 function describeMetricFindQuery(query, func) {

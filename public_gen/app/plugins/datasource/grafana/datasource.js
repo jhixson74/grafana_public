@@ -13,7 +13,17 @@ System.register([], function(exports_1) {
                     return this.backendSrv.get('/api/metrics/test', {
                         from: options.range.from.valueOf(),
                         to: options.range.to.valueOf(),
+                        scenario: 'random_walk',
+                        interval: options.intervalMs,
                         maxDataPoints: options.maxDataPoints
+                    });
+                };
+                GrafanaDatasource.prototype.annotationQuery = function (options) {
+                    return this.backendSrv.get('/api/annotations', {
+                        from: options.range.from.valueOf(),
+                        to: options.range.to.valueOf(),
+                        limit: options.limit,
+                        type: options.type,
                     });
                 };
                 return GrafanaDatasource;

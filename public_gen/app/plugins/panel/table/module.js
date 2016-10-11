@@ -34,9 +34,10 @@ System.register(['lodash', 'jquery', 'app/core/utils/file_export', 'app/plugins/
             TablePanelCtrl = (function (_super) {
                 __extends(TablePanelCtrl, _super);
                 /** @ngInject */
-                function TablePanelCtrl($scope, $injector, annotationsSrv) {
+                function TablePanelCtrl($scope, $injector, annotationsSrv, $sanitize) {
                     _super.call(this, $scope, $injector);
                     this.annotationsSrv = annotationsSrv;
+                    this.$sanitize = $sanitize;
                     this.panelDefaults = {
                         targets: [{}],
                         transform: 'timeseries_to_columns',
@@ -87,7 +88,8 @@ System.register(['lodash', 'jquery', 'app/core/utils/file_export', 'app/plugins/
                     this.pageIndex = 0;
                     if (this.panel.transform === 'annotations') {
                         this.setTimeQueryStart();
-                        return this.annotationsSrv.getAnnotations(this.dashboard).then(function (annotations) {
+                        return this.annotationsSrv.getAnnotations({ dashboard: this.dashboard, panel: this.panel, range: this.range })
+                            .then(function (annotations) {
                             return { data: annotations };
                         });
                     }
@@ -143,7 +145,8 @@ System.register(['lodash', 'jquery', 'app/core/utils/file_export', 'app/plugins/
                     this.render();
                 };
                 TablePanelCtrl.prototype.exportCsv = function () {
-                    FileExport.exportTableDataToCsv(this.table);
+                    var renderer = new renderer_1.TableRenderer(this.panel, this.table, this.dashboard.isTimezoneUtc(), this.$sanitize);
+                    FileExport.exportTableDataToCsv(renderer.render_values());
                 };
                 TablePanelCtrl.prototype.link = function (scope, elem, attrs, ctrl) {
                     var data;
@@ -158,7 +161,7 @@ System.register(['lodash', 'jquery', 'app/core/utils/file_export', 'app/plugins/
                         return (panelHeight - 31) + 'px';
                     }
                     function appendTableRows(tbodyElem) {
-                        var renderer = new renderer_1.TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc());
+                        var renderer = new renderer_1.TableRenderer(panel, data, ctrl.dashboard.isTimezoneUtc(), ctrl.$sanitize);
                         tbodyElem.empty();
                         tbodyElem.html(renderer.render(ctrl.pageIndex));
                     }

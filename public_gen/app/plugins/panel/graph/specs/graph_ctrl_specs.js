@@ -1,10 +1,13 @@
 ///<reference path="../../../../headers/common.d.ts" />
-System.register(['../../../../../test/lib/common', '../module', '../../../../../test/specs/helpers'], function(exports_1) {
-    var common_1, module_1, helpers_1;
+System.register(['../../../../../test/lib/common', 'moment', '../module', '../../../../../test/specs/helpers'], function(exports_1) {
+    var common_1, moment_1, module_1, helpers_1;
     return {
         setters:[
             function (common_1_1) {
                 common_1 = common_1_1;
+            },
+            function (moment_1_1) {
+                moment_1 = moment_1_1;
             },
             function (module_1_1) {
                 module_1 = module_1_1;
@@ -23,57 +26,44 @@ System.register(['../../../../../test/lib/common', '../module', '../../../../../
                     ctx.ctrl.annotationsPromise = Promise.resolve({});
                     ctx.ctrl.updateTimeRange();
                 });
-                common_1.describe('msResolution with second resolution timestamps', function () {
+                common_1.describe('when time series are outside range', function () {
                     common_1.beforeEach(function () {
                         var data = [
                             { target: 'test.cpu1', datapoints: [[45, 1234567890], [60, 1234567899]] },
-                            { target: 'test.cpu2', datapoints: [[55, 1236547890], [90, 1234456709]] }
                         ];
-                        ctx.ctrl.panel.tooltip.msResolution = false;
+                        ctx.ctrl.range = { from: moment_1.default().valueOf(), to: moment_1.default().valueOf() };
                         ctx.ctrl.onDataReceived(data);
                     });
-                    common_1.it('should not show millisecond resolution tooltip', function () {
-                        common_1.expect(ctx.ctrl.panel.tooltip.msResolution).to.be(false);
+                    common_1.it('should set datapointsOutside', function () {
+                        common_1.expect(ctx.ctrl.datapointsOutside).to.be(true);
                     });
                 });
-                common_1.describe('msResolution with millisecond resolution timestamps', function () {
+                common_1.describe('when time series are inside range', function () {
                     common_1.beforeEach(function () {
+                        var range = {
+                            from: moment_1.default().subtract(1, 'days').valueOf(),
+                            to: moment_1.default().valueOf()
+                        };
                         var data = [
-                            { target: 'test.cpu1', datapoints: [[45, 1234567890000], [60, 1234567899000]] },
-                            { target: 'test.cpu2', datapoints: [[55, 1236547890001], [90, 1234456709000]] }
+                            { target: 'test.cpu1', datapoints: [[45, range.from + 1000], [60, range.from + 10000]] },
                         ];
-                        ctx.ctrl.panel.tooltip.msResolution = false;
+                        ctx.ctrl.range = range;
                         ctx.ctrl.onDataReceived(data);
                     });
-                    common_1.it('should show millisecond resolution tooltip', function () {
-                        common_1.expect(ctx.ctrl.panel.tooltip.msResolution).to.be(true);
+                    common_1.it('should set datapointsOutside', function () {
+                        common_1.expect(ctx.ctrl.datapointsOutside).to.be(false);
                     });
                 });
-                common_1.describe('msResolution with millisecond resolution timestamps but with trailing zeroes', function () {
+                common_1.describe('datapointsCount given 2 series', function () {
                     common_1.beforeEach(function () {
                         var data = [
-                            { target: 'test.cpu1', datapoints: [[45, 1234567890000], [60, 1234567899000]] },
-                            { target: 'test.cpu2', datapoints: [[55, 1236547890000], [90, 1234456709000]] }
+                            { target: 'test.cpu1', datapoints: [[45, 1234567890], [60, 1234567899]] },
+                            { target: 'test.cpu2', datapoints: [[45, 1234567890]] },
                         ];
-                        ctx.ctrl.panel.tooltip.msResolution = false;
                         ctx.ctrl.onDataReceived(data);
                     });
-                    common_1.it('should not show millisecond resolution tooltip', function () {
-                        common_1.expect(ctx.ctrl.panel.tooltip.msResolution).to.be(false);
-                    });
-                });
-                common_1.describe('msResolution with millisecond resolution timestamps in one of the series', function () {
-                    common_1.beforeEach(function () {
-                        var data = [
-                            { target: 'test.cpu1', datapoints: [[45, 1234567890000], [60, 1234567899000]] },
-                            { target: 'test.cpu2', datapoints: [[55, 1236547890010], [90, 1234456709000]] },
-                            { target: 'test.cpu3', datapoints: [[65, 1236547890000], [120, 1234456709000]] }
-                        ];
-                        ctx.ctrl.panel.tooltip.msResolution = false;
-                        ctx.ctrl.onDataReceived(data);
-                    });
-                    common_1.it('should show millisecond resolution tooltip', function () {
-                        common_1.expect(ctx.ctrl.panel.tooltip.msResolution).to.be(true);
+                    common_1.it('should set datapointsCount to sum of datapoints', function () {
+                        common_1.expect(ctx.ctrl.datapointsCount).to.be(3);
                     });
                 });
             });

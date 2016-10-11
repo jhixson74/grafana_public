@@ -1,0 +1,25 @@
+/// <reference path="../../../../public/app/headers/common.d.ts" />
+import { Variable } from './variable';
+export declare class ConstantVariable implements Variable {
+    private model;
+    private variableSrv;
+    query: string;
+    options: any[];
+    current: any;
+    defaults: {
+        type: string;
+        name: string;
+        hide: number;
+        label: string;
+        query: string;
+        current: {};
+    };
+    /** @ngInject **/
+    constructor(model: any, variableSrv: any);
+    getModel(): any;
+    setValue(option: any): void;
+    updateOptions(): Promise<void>;
+    dependsOn(variable: any): boolean;
+    setValueFromUrl(urlValue: any): any;
+    getValueForUrl(): any;
+}

@@ -66,7 +66,7 @@ System.register(['angular', 'lodash', 'app/plugins/sdk'], function(exports_1) {
                         expr: this.templateSrv.replace(this.target.expr, this.panelCtrl.panel.scopedVars, this.datasource.interpolateQueryExpr),
                         range_input: rangeDiff + 's',
                         end_input: endTime,
-                        step_input: '',
+                        step_input: this.target.step,
                         stacked: this.panelCtrl.panel.stack,
                         tab: 0
                     };

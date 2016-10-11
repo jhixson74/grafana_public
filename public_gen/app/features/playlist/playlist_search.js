@@ -30,7 +30,7 @@ System.register(['../../core/core_module'], function(exports_1) {
                     this.$timeout = $timeout;
                     this.backendSrv = backendSrv;
                     this.contextSrv = contextSrv;
-                    this.query = { query: '', tag: [], starred: false };
+                    this.query = { query: '', tag: [], starred: false, limit: 30 };
                     $timeout(function () {
                         _this.query.query = '';
                         _this.searchDashboards();

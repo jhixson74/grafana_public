@@ -23,24 +23,23 @@ System.register(['angular'], function(exports_1) {
         execute: function() {
             SubmenuCtrl = (function () {
                 /** @ngInject */
-                function SubmenuCtrl($rootScope, templateValuesSrv, dynamicDashboardSrv) {
+                function SubmenuCtrl($rootScope, variableSrv, templateSrv, $location) {
                     this.$rootScope = $rootScope;
-                    this.templateValuesSrv = templateValuesSrv;
-                    this.dynamicDashboardSrv = dynamicDashboardSrv;
+                    this.variableSrv = variableSrv;
+                    this.templateSrv = templateSrv;
+                    this.$location = $location;
                     this.annotations = this.dashboard.templating.list;
-                    this.variables = this.dashboard.templating.list;
+                    this.variables = this.variableSrv.variables;
                 }
-                SubmenuCtrl.prototype.disableAnnotation = function (annotation) {
-                    annotation.enable = !annotation.enable;
+                SubmenuCtrl.prototype.annotationStateChanged = function () {
                     this.$rootScope.$broadcast('refresh');
                 };
                 SubmenuCtrl.prototype.getValuesForTag = function (variable, tagKey) {
-                    return this.templateValuesSrv.getValuesForTag(variable, tagKey);
+                    return this.variableSrv.getValuesForTag(variable, tagKey);
                 };
                 SubmenuCtrl.prototype.variableUpdated = function (variable) {
                     var _this = this;
-                    this.templateValuesSrv.variableUpdated(variable).then(function () {
-                        _this.dynamicDashboardSrv.update(_this.dashboard);
+                    this.variableSrv.variableUpdated(variable).then(function () {
                         _this.$rootScope.$emit('template-variable-value-updated');
                         _this.$rootScope.$broadcast('refresh');
                     });

@@ -46,6 +46,19 @@ System.register(['../../../../../test/lib/common', '../../../../../test/specs/he
                         common_1.expect(ctx.data.valueFormated).to.be('15');
                     });
                 });
+                singleStatScenario('showing serie name instead of value', function (ctx) {
+                    ctx.setup(function () {
+                        ctx.datapoints = [[10, 1], [20, 2]];
+                        ctx.ctrl.panel.valueName = 'name';
+                    });
+                    common_1.it('Should use series avg as default main value', function () {
+                        common_1.expect(ctx.data.value).to.be(0);
+                        common_1.expect(ctx.data.valueRounded).to.be(0);
+                    });
+                    common_1.it('should set formated falue', function () {
+                        common_1.expect(ctx.data.valueFormated).to.be('test.cpu1');
+                    });
+                });
                 singleStatScenario('MainValue should use same number for decimals as displayed when checking thresholds', function (ctx) {
                     ctx.setup(function () {
                         ctx.datapoints = [[99.999, 1], [99.99999, 2]];
@@ -71,6 +84,26 @@ System.register(['../../../../../test/lib/common', '../../../../../test/specs/he
                     });
                     common_1.it('Should replace value with text', function () {
                         common_1.expect(ctx.data.valueFormated).to.be('OK');
+                    });
+                });
+                singleStatScenario('When range to text mapping is specifiedfor first range', function (ctx) {
+                    ctx.setup(function () {
+                        ctx.datapoints = [[41, 50]];
+                        ctx.ctrl.panel.mappingType = 2;
+                        ctx.ctrl.panel.rangeMaps = [{ from: '10', to: '50', text: 'OK' }, { from: '51', to: '100', text: 'NOT OK' }];
+                    });
+                    common_1.it('Should replace value with text OK', function () {
+                        common_1.expect(ctx.data.valueFormated).to.be('OK');
+                    });
+                });
+                singleStatScenario('When range to text mapping is specified for other ranges', function (ctx) {
+                    ctx.setup(function () {
+                        ctx.datapoints = [[65, 75]];
+                        ctx.ctrl.panel.mappingType = 2;
+                        ctx.ctrl.panel.rangeMaps = [{ from: '10', to: '50', text: 'OK' }, { from: '51', to: '100', text: 'NOT OK' }];
+                    });
+                    common_1.it('Should replace value with text NOT OK', function () {
+                        common_1.expect(ctx.data.valueFormated).to.be('NOT OK');
                     });
                 });
             });

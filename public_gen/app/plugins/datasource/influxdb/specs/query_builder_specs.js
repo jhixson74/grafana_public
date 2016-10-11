@@ -38,6 +38,21 @@ System.register(['test/lib/common', '../query_builder'], function(exports_1) {
                         var query = builder.buildExploreQuery('MEASUREMENTS');
                         common_1.expect(query).to.be('SHOW MEASUREMENTS');
                     });
+                    common_1.it('should have no conditions in measurement query for query with no tags and empty query', function () {
+                        var builder = new query_builder_1.default({ measurement: '', tags: [] });
+                        var query = builder.buildExploreQuery('MEASUREMENTS', undefined, '');
+                        common_1.expect(query).to.be('SHOW MEASUREMENTS');
+                    });
+                    common_1.it('should have WITH MEASUREMENT in measurement query for non-empty query with no tags', function () {
+                        var builder = new query_builder_1.default({ measurement: '', tags: [] });
+                        var query = builder.buildExploreQuery('MEASUREMENTS', undefined, 'something');
+                        common_1.expect(query).to.be('SHOW MEASUREMENTS WITH MEASUREMENT =~ /something/');
+                    });
+                    common_1.it('should have WITH MEASUREMENT WHERE in measurement query for non-empty query with tags', function () {
+                        var builder = new query_builder_1.default({ measurement: '', tags: [{ key: 'app', value: 'email' }] });
+                        var query = builder.buildExploreQuery('MEASUREMENTS', undefined, 'something');
+                        common_1.expect(query).to.be("SHOW MEASUREMENTS WITH MEASUREMENT =~ /something/ WHERE \"app\" = 'email'");
+                    });
                     common_1.it('should have where condition in measurement query for query with tags', function () {
                         var builder = new query_builder_1.default({ measurement: '', tags: [{ key: 'app', value: 'email' }] });
                         var query = builder.buildExploreQuery('MEASUREMENTS');
