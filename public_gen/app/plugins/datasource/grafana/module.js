@@ -6,7 +6,7 @@ System.register(['./datasource', 'app/plugins/sdk'], function(exports_1) {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
     var datasource_1, sdk_1;
-    var GrafanaQueryCtrl;
+    var GrafanaQueryCtrl, GrafanaAnnotationsQueryCtrl;
     return {
         setters:[
             function (datasource_1_1) {
@@ -24,9 +24,18 @@ System.register(['./datasource', 'app/plugins/sdk'], function(exports_1) {
                 GrafanaQueryCtrl.templateUrl = 'partials/query.editor.html';
                 return GrafanaQueryCtrl;
             })(sdk_1.QueryCtrl);
+            GrafanaAnnotationsQueryCtrl = (function () {
+                function GrafanaAnnotationsQueryCtrl() {
+                    this.annotation.type = this.annotation.type || 'alert';
+                    this.annotation.limit = this.annotation.limit || 100;
+                }
+                GrafanaAnnotationsQueryCtrl.templateUrl = 'partials/annotations.editor.html';
+                return GrafanaAnnotationsQueryCtrl;
+            })();
             exports_1("GrafanaDatasource", datasource_1.GrafanaDatasource);
             exports_1("Datasource", datasource_1.GrafanaDatasource);
             exports_1("QueryCtrl", GrafanaQueryCtrl);
+            exports_1("AnnotationsQueryCtrl", GrafanaAnnotationsQueryCtrl);
         }
     }
 });

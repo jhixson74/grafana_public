@@ -25,6 +25,17 @@ System.register(['test/lib/common', 'app/core/core'], function(exports_1) {
                         common_1.expect(sub1Called).to.be(true);
                         common_1.expect(sub2Called).to.be(true);
                     });
+                    common_1.it('when subscribing twice', function () {
+                        var events = new core_1.Emitter();
+                        var sub1Called = 0;
+                        function handler() {
+                            sub1Called += 1;
+                        }
+                        events.on('test', handler);
+                        events.on('test', handler);
+                        events.emit('test', null);
+                        common_1.expect(sub1Called).to.be(2);
+                    });
                     common_1.it('should handle errors', function () {
                         var events = new core_1.Emitter();
                         var sub1Called = 0;

@@ -110,7 +110,7 @@ System.register(['lodash', 'app/plugins/sdk', 'app/features/dashboard/impression
                     if (!this.panel.recent) {
                         return Promise.resolve();
                     }
-                    var dashIds = lodash_1.default.first(impression_store_1.impressions.getDashboardOpened(), this.panel.limit);
+                    var dashIds = lodash_1.default.take(impression_store_1.impressions.getDashboardOpened(), this.panel.limit);
                     return this.backendSrv.search({ dashboardIds: dashIds, limit: this.panel.limit }).then(function (result) {
                         _this.groups[1].list = dashIds.map(function (orderId) {
                             return lodash_1.default.find(result, function (dashboard) {

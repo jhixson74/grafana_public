@@ -12,7 +12,7 @@ System.register(['angular', 'jquery'], function(exports_1) {
             }],
         execute: function() {
             module = angular_1.default.module('grafana.directives');
-            panelTemplate = "\n  <div class=\"panel-container\" ng-class=\"{'panel-transparent': ctrl.panel.transparent}\">\n    <div class=\"panel-header\">\n      <span class=\"alert-error panel-error small pointer\" ng-if=\"ctrl.error\" ng-click=\"ctrl.openInspector()\">\n        <span data-placement=\"top\" bs-tooltip=\"ctrl.error\">\n          <i class=\"fa fa-exclamation\"></i><span class=\"panel-error-arrow\"></span>\n        </span>\n      </span>\n\n      <span class=\"panel-loading\" ng-show=\"ctrl.loading\">\n        <i class=\"fa fa-spinner fa-spin\"></i>\n      </span>\n\n      <div class=\"panel-title-container drag-handle\" panel-menu></div>\n    </div>\n\n    <div class=\"panel-content\">\n      <ng-transclude></ng-transclude>\n    </div>\n    <panel-resizer></panel-resizer>\n  </div>\n\n  <div class=\"panel-full-edit\" ng-if=\"ctrl.editMode\">\n    <div class=\"tabbed-view tabbed-view--panel-edit\">\n      <div class=\"tabbed-view-header\">\n        <h2 class=\"tabbed-view-title\">\n          {{ctrl.pluginName}}\n        </h2>\n\n        <ul class=\"gf-tabs\">\n          <li class=\"gf-tabs-item\" ng-repeat=\"tab in ::ctrl.editorTabs\">\n            <a class=\"gf-tabs-link\" ng-click=\"ctrl.editorTabIndex = $index\" ng-class=\"{active: ctrl.editorTabIndex === $index}\">\n              {{::tab.title}}\n            </a>\n          </li>\n        </ul>\n\n        <button class=\"tabbed-view-close-btn\" ng-click=\"ctrl.exitFullscreen();\">\n          <i class=\"fa fa-remove\"></i>\n        </button>\n      </div>\n\n      <div class=\"tabbed-view-body\">\n        <div ng-repeat=\"tab in ctrl.editorTabs\" ng-if=\"ctrl.editorTabIndex === $index\">\n          <panel-editor-tab editor-tab=\"tab\" ctrl=\"ctrl\" index=\"$index\"></panel-editor-tab>\n        </div>\n      </div>\n    </div>\n  </div>\n";
+            panelTemplate = "\n  <div class=\"panel-container\">\n    <div class=\"panel-header\">\n      <span class=\"alert-error panel-error small pointer\" ng-if=\"ctrl.error\" ng-click=\"ctrl.openInspector()\">\n        <span data-placement=\"top\" bs-tooltip=\"ctrl.error\">\n          <i class=\"fa fa-exclamation\"></i><span class=\"panel-error-arrow\"></span>\n        </span>\n      </span>\n\n      <span class=\"panel-loading\" ng-show=\"ctrl.loading\">\n        <i class=\"fa fa-spinner fa-spin\"></i>\n      </span>\n\n      <div class=\"panel-title-container drag-handle\" panel-menu></div>\n    </div>\n\n    <div class=\"panel-content\">\n      <ng-transclude></ng-transclude>\n    </div>\n    <panel-resizer></panel-resizer>\n  </div>\n\n  <div class=\"panel-full-edit\" ng-if=\"ctrl.editMode\">\n    <div class=\"tabbed-view tabbed-view--panel-edit\">\n      <div class=\"tabbed-view-header\">\n        <h2 class=\"tabbed-view-title\">\n          {{ctrl.pluginName}}\n        </h2>\n\n        <ul class=\"gf-tabs\">\n          <li class=\"gf-tabs-item\" ng-repeat=\"tab in ::ctrl.editorTabs\">\n            <a class=\"gf-tabs-link\" ng-click=\"ctrl.changeTab($index)\" ng-class=\"{active: ctrl.editorTabIndex === $index}\">\n              {{::tab.title}}\n            </a>\n          </li>\n        </ul>\n\n        <button class=\"tabbed-view-close-btn\" ng-click=\"ctrl.exitFullscreen();\">\n          <i class=\"fa fa-remove\"></i>\n        </button>\n      </div>\n\n      <div class=\"tabbed-view-body\">\n        <div ng-repeat=\"tab in ctrl.editorTabs\" ng-if=\"ctrl.editorTabIndex === $index\">\n          <panel-editor-tab editor-tab=\"tab\" ctrl=\"ctrl\" index=\"$index\"></panel-editor-tab>\n        </div>\n      </div>\n    </div>\n  </div>\n";
             module.directive('grafanaPanel', function () {
                 return {
                     restrict: 'E',
@@ -22,6 +22,21 @@ System.register(['angular', 'jquery'], function(exports_1) {
                     link: function (scope, elem) {
                         var panelContainer = elem.find('.panel-container');
                         var ctrl = scope.ctrl;
+                        // the reason for handling these classes this way is for performance
+                        // limit the watchers on panels etc
+                        ctrl.events.on('render', function () {
+                            panelContainer.toggleClass('panel-transparent', ctrl.panel.transparent === true);
+                            panelContainer.toggleClass('panel-has-alert', ctrl.panel.alert !== undefined);
+                            if (panelContainer.hasClass('panel-has-alert')) {
+                                panelContainer.removeClass('panel-alert-state--ok panel-alert-state--alerting');
+                            }
+                            // set special class for ok, or alerting states
+                            if (ctrl.alertState) {
+                                if (ctrl.alertState.state === 'ok' || ctrl.alertState.state === 'alerting') {
+                                    panelContainer.addClass('panel-alert-state--' + ctrl.alertState.state);
+                                }
+                            }
+                        });
                         scope.$watchGroup(['ctrl.fullscreen', 'ctrl.containerHeight'], function () {
                             panelContainer.css({ minHeight: ctrl.containerHeight });
                             elem.toggleClass('panel-fullscreen', ctrl.fullscreen ? true : false);

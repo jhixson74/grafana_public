@@ -1,7 +1,7 @@
 ///<reference path="../../../headers/common.d.ts" />
 System.register(['lodash'], function(exports_1) {
     var lodash_1;
-    var unicodeLetterTable, identifierStartTable, i, identifierPartTable, i2;
+    var unicodeLetterTable, identifierStartTable, i, identifierPartTable;
     function Lexer(expression) {
         this.input = expression;
         this.char = 1;
@@ -142,12 +142,7 @@ System.register(['lodash'], function(exports_1) {
                         i === 61 ||
                         i >= 97 && i <= 122; // a-z
             }
-            identifierPartTable = [];
-            for (i2 = 0; i2 < 128; i2++) {
-                identifierPartTable[i2] =
-                    identifierStartTable[i2] ||
-                        i2 >= 48 && i2 <= 57; // 0-9
-            }
+            identifierPartTable = identifierStartTable;
             Lexer.prototype = {
                 peek: function (i) {
                     return this.input.charAt(i || 0);
@@ -427,7 +422,11 @@ System.register(['lodash'], function(exports_1) {
                                     if (isDecimalDigit(char)) {
                                         bad = true;
                                     }
-                                    else if (!isOctalDigit(char)) {
+                                    if (!isOctalDigit(char)) {
+                                        // if the char is a non punctuator then its not a valid number
+                                        if (!this.isPunctuator(char)) {
+                                            return null;
+                                        }
                                         break;
                                     }
                                     value += char;
@@ -443,7 +442,7 @@ System.register(['lodash'], function(exports_1) {
                                     type: 'number',
                                     value: value,
                                     base: 8,
-                                    isMalformed: false
+                                    isMalformed: bad
                                 };
                             }
                             // Decimal numbers that start with '0' such as '09' are illegal

@@ -15,13 +15,15 @@ System.register(['app/core/core_module', 'app/core/config', 'lodash'], function(
         execute: function() {
             StyleGuideCtrl = (function () {
                 /** @ngInject **/
-                function StyleGuideCtrl($http, $routeParams) {
+                function StyleGuideCtrl($http, $routeParams, $location) {
                     this.$http = $http;
+                    this.$routeParams = $routeParams;
+                    this.$location = $location;
                     this.colors = [];
                     this.buttonNames = ['primary', 'secondary', 'inverse', 'success', 'warning', 'danger'];
                     this.buttonSizes = ['btn-small', '', 'btn-large'];
                     this.buttonVariants = ['-', '-outline-'];
-                    this.pages = ['colors', 'buttons', 'forms', 'dashboard', 'query-editors'];
+                    this.pages = ['colors', 'buttons'];
                     this.theme = config_1.default.bootData.user.lightTheme ? 'light' : 'dark';
                     this.page = {};
                     if ($routeParams.page) {
@@ -43,8 +45,11 @@ System.register(['app/core/core_module', 'app/core/config', 'lodash'], function(
                     });
                 };
                 StyleGuideCtrl.prototype.switchTheme = function () {
-                    var other = this.theme === 'dark' ? 'light' : 'dark';
-                    window.location.href = window.location.href + '?theme=' + other;
+                    this.$routeParams.theme = this.theme === 'dark' ? 'light' : 'dark';
+                    this.$location.search(this.$routeParams);
+                    setTimeout(function () {
+                        window.location.href = window.location.href;
+                    });
                 };
                 return StyleGuideCtrl;
             })();

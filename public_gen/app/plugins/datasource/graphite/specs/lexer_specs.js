@@ -61,6 +61,13 @@ System.register(['test/lib/common', '../lexer'], function(exports_1) {
                     common_1.expect(tokens[4].value).to.be('12_10');
                     common_1.expect(tokens[4].type).to.be('identifier');
                 });
+                common_1.it('should tokenize metric expression with segment that start with number', function () {
+                    var lexer = new lexer_1.Lexer("metric.001-server");
+                    var tokens = lexer.tokenize();
+                    common_1.expect(tokens[0].type).to.be('identifier');
+                    common_1.expect(tokens[2].type).to.be('identifier');
+                    common_1.expect(tokens.length).to.be(3);
+                });
                 common_1.it('should tokenize func call with numbered metric and number arg', function () {
                     var lexer = new lexer_1.Lexer("scale(metric.10, 15)");
                     var tokens = lexer.tokenize();

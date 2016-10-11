@@ -17,6 +17,8 @@ System.register(['app/core/config', 'app/core/core'], function(exports_1) {
                     this.backendSrv = backendSrv;
                     this.contextSrv = contextSrv;
                     this.$location = $location;
+                    this.orgs = [];
+                    this.showOrgsList = false;
                     this.getUser();
                     this.getUserOrgs();
                 }
@@ -31,6 +33,7 @@ System.register(['app/core/config', 'app/core/core'], function(exports_1) {
                     var _this = this;
                     this.backendSrv.get('/api/user/orgs').then(function (orgs) {
                         _this.orgs = orgs;
+                        _this.showOrgsList = orgs.length > 1;
                     });
                 };
                 ProfileCtrl.prototype.setUsingOrg = function (org) {

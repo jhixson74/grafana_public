@@ -78,7 +78,7 @@ System.register(['lodash', 'angular', './transformers', 'app/core/utils/kbn'], f
                 };
                 TablePanelEditorCtrl.prototype.addColumn = function () {
                     var columns = transformers_1.transformers[this.panel.transform].getColumns(this.panelCtrl.dataRaw);
-                    var column = lodash_1.default.findWhere(columns, { text: this.addColumnSegment.value });
+                    var column = lodash_1.default.find(columns, { text: this.addColumnSegment.value });
                     if (column) {
                         this.panel.columns.push(column);
                         this.render();

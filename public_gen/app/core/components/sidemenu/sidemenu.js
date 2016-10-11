@@ -52,13 +52,17 @@ System.register(['app/core/config', 'jquery', '../../core_module'], function(exp
                     this.user = contextSrv.user;
                     this.appSubUrl = config_1.default.appSubUrl;
                     this.showSignout = this.contextSrv.isSignedIn && !config_1.default['authProxyEnabled'];
+                    this.maxShownOrgs = 10;
                     this.mainLinks = config_1.default.bootData.mainNavLinks;
                     this.openUserDropdown();
+                    this.loginUrl = 'login?redirect=' + encodeURIComponent(this.$location.path());
                     this.$scope.$on('$routeChangeSuccess', function () {
                         if (!_this.contextSrv.pinned) {
                             _this.contextSrv.sidemenu = false;
                         }
+                        _this.loginUrl = 'login?redirect=' + encodeURIComponent(_this.$location.path());
                     });
+                    this.orgFilter = '';
                 }
                 SideMenuCtrl.prototype.getUrl = function (url) {
                     return config_1.default.appSubUrl + url;
@@ -76,34 +80,42 @@ System.register(['app/core/config', 'jquery', '../../core_module'], function(exp
                         this.orgMenu.push({ section: this.user.orgName, cssClass: 'dropdown-menu-title' });
                         this.orgMenu.push({
                             text: "Preferences",
-                            url: this.getUrl("/org"),
+                            url: this.getUrl("/org")
                         });
                         this.orgMenu.push({
                             text: "Users",
-                            url: this.getUrl("/org/users"),
+                            url: this.getUrl("/org/users")
                         });
                         this.orgMenu.push({
                             text: "API Keys",
-                            url: this.getUrl("/org/apikeys"),
+                            url: this.getUrl("/org/apikeys")
                         });
                     }
                     this.orgMenu.push({ cssClass: "divider" });
                     this.backendSrv.get('/api/user/orgs').then(function (orgs) {
-                        orgs.forEach(function (org) {
-                            if (org.orgId === _this.contextSrv.user.orgId) {
-                                return;
-                            }
-                            _this.orgMenu.push({
+                        _this.orgs = orgs;
+                        _this.loadOrgsItems();
+                    });
+                };
+                SideMenuCtrl.prototype.loadOrgsItems = function () {
+                    var _this = this;
+                    this.orgItems = [];
+                    this.orgs.forEach(function (org) {
+                        if (org.orgId === _this.contextSrv.user.orgId) {
+                            return;
+                        }
+                        if (_this.orgItems.length < _this.maxShownOrgs && (_this.orgFilter === '' || org.name.indexOf(_this.orgFilter) !== -1)) {
+                            _this.orgItems.push({
                                 text: "Switch to " + org.name,
                                 icon: "fa fa-fw fa-random",
                                 url: _this.getUrl('/profile/switch-org/' + org.orgId),
                                 target: '_self'
                             });
-                        });
-                        if (config_1.default.allowOrgCreate) {
-                            _this.orgMenu.push({ text: "New organization", icon: "fa fa-fw fa-plus", url: _this.getUrl('/org/new') });
                         }
                     });
+                    if (config_1.default.allowOrgCreate) {
+                        this.orgItems.push({ text: "New organization", icon: "fa fa-fw fa-plus", url: this.getUrl('/org/new') });
+                    }
                 };
                 return SideMenuCtrl;
             })();

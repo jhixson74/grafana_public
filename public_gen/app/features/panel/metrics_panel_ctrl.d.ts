@@ -1,7 +1,7 @@
 /// <reference path="../../../../public/app/headers/common.d.ts" />
 import { PanelCtrl } from './panel_ctrl';
 declare class MetricsPanelCtrl extends PanelCtrl {
-    error: boolean;
+    error: any;
     loading: boolean;
     datasource: any;
     datasourceName: any;
@@ -14,6 +14,7 @@ declare class MetricsPanelCtrl extends PanelCtrl {
     range: any;
     rangeRaw: any;
     interval: any;
+    intervalMs: any;
     resolution: any;
     timeInfo: any;
     skipDataOnInit: boolean;
@@ -25,6 +26,7 @@ declare class MetricsPanelCtrl extends PanelCtrl {
     setTimeQueryStart(): void;
     setTimeQueryEnd(): void;
     updateTimeRange(): void;
+    calculateInterval(): void;
     applyPanelTimeOverrides(): void;
     issueQueries(datasource: any): any;
     handleQueryResult(result: any): void;

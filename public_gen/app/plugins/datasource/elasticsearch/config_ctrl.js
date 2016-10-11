@@ -26,7 +26,7 @@ System.register(['lodash'], function(exports_1) {
                     this.current.jsonData.timeField = this.current.jsonData.timeField || '@timestamp';
                 }
                 ElasticConfigCtrl.prototype.indexPatternTypeChanged = function () {
-                    var def = lodash_1.default.findWhere(this.indexPatternTypes, { value: this.current.jsonData.interval });
+                    var def = lodash_1.default.find(this.indexPatternTypes, { value: this.current.jsonData.interval });
                     this.current.database = def.example || 'es-index-name';
                 };
                 ElasticConfigCtrl.templateUrl = 'public/app/plugins/datasource/elasticsearch/partials/config.html';

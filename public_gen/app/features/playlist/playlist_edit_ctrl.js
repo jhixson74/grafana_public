@@ -45,12 +45,12 @@ System.register(['lodash', '../../core/core_module'], function(exports_1) {
                 PlaylistEditCtrl.prototype.filterFoundPlaylistItems = function () {
                     var _this = this;
                     this.filteredDashboards = lodash_1.default.reject(this.dashboardresult, function (playlistItem) {
-                        return lodash_1.default.findWhere(_this.playlistItems, function (listPlaylistItem) {
+                        return lodash_1.default.find(_this.playlistItems, function (listPlaylistItem) {
                             return parseInt(listPlaylistItem.value) === playlistItem.id;
                         });
                     });
                     this.filteredTags = lodash_1.default.reject(this.tagresult, function (tag) {
-                        return lodash_1.default.findWhere(_this.playlistItems, function (listPlaylistItem) {
+                        return lodash_1.default.find(_this.playlistItems, function (listPlaylistItem) {
                             return listPlaylistItem.value === tag.term;
                         });
                     });

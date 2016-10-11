@@ -75,21 +75,26 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                     // clear loading/error state
                     delete this.error;
                     this.loading = true;
+                    this.updateTimeRange();
                     // load datasource service
                     this.setTimeQueryStart();
                     this.datasourceSrv.get(this.panel.datasource)
                         .then(this.issueQueries.bind(this))
                         .then(this.handleQueryResult.bind(this))
                         .catch(function (err) {
+                        // if cancelled  keep loading set to true
+                        if (err.cancelled) {
+                            console.log('Panel request cancelled', err);
+                            return;
+                        }
                         _this.loading = false;
-                        _this.error = err.message || "Timeseries data request error";
+                        _this.error = err.message || "Request Error";
                         _this.inspector = { error: err };
                         _this.events.emit('data-error', err);
                         console.log('Panel data error:', err);
                     });
                 };
                 MetricsPanelCtrl.prototype.setTimeQueryStart = function () {
-                    this.timing = {};
                     this.timing.queryStart = new Date().getTime();
                 };
                 MetricsPanelCtrl.prototype.setTimeQueryEnd = function () {
@@ -97,7 +102,7 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                 };
                 MetricsPanelCtrl.prototype.updateTimeRange = function () {
                     this.range = this.timeSrv.timeRange();
-                    this.rangeRaw = this.timeSrv.timeRange(false);
+                    this.rangeRaw = this.range.raw;
                     this.applyPanelTimeOverrides();
                     if (this.panel.maxDataPoints) {
                         this.resolution = this.panel.maxDataPoints;
@@ -105,11 +110,22 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                     else {
                         this.resolution = Math.ceil(jquery_1.default(window).width() * (this.panel.span / 12));
                     }
-                    var panelInterval = this.panel.interval;
-                    var datasourceInterval = (this.datasource || {}).interval;
-                    this.interval = kbn_1.default.calculateInterval(this.range, this.resolution, panelInterval || datasourceInterval);
+                    this.calculateInterval();
                 };
                 ;
+                MetricsPanelCtrl.prototype.calculateInterval = function () {
+                    var intervalOverride = this.panel.interval;
+                    // if no panel interval check datasource
+                    if (intervalOverride) {
+                        intervalOverride = this.templateSrv.replace(intervalOverride, this.panel.scopedVars);
+                    }
+                    else if (this.datasource && this.datasource.interval) {
+                        intervalOverride = this.datasource.interval;
+                    }
+                    var res = kbn_1.default.calculateInterval(this.range, this.resolution, intervalOverride);
+                    this.interval = res.interval;
+                    this.intervalMs = res.intervalMs;
+                };
                 MetricsPanelCtrl.prototype.applyPanelTimeOverrides = function () {
                     this.timeInfo = '';
                     // check panel time overrrides
@@ -148,7 +164,6 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                 };
                 ;
                 MetricsPanelCtrl.prototype.issueQueries = function (datasource) {
-                    this.updateTimeRange();
                     this.datasource = datasource;
                     if (!this.panel.targets || this.panel.targets.length === 0) {
                         return this.$q.when([]);
@@ -158,6 +173,7 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                         range: this.range,
                         rangeRaw: this.rangeRaw,
                         interval: this.interval,
+                        intervalMs: this.intervalMs,
                         targets: this.panel.targets,
                         format: this.panel.renderer === 'png' ? 'png' : 'json',
                         maxDataPoints: this.resolution,
@@ -176,6 +192,10 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                     }
                     if (this.dashboard.snapshot) {
                         this.panel.snapshotData = result.data;
+                    }
+                    if (!result || !result.data) {
+                        console.log('Data source query result invalid, missing data field:', result);
+                        result = { data: [] };
                     }
                     return this.events.emit('data-received', result.data);
                 };
@@ -210,7 +230,7 @@ System.register(['app/core/config', 'jquery', 'lodash', 'app/core/utils/kbn', '.
                     if (datasource.meta.mixed) {
                         lodash_1.default.each(this.panel.targets, function (target) {
                             target.datasource = _this.panel.datasource;
-                            if (target.datasource === null) {
+                            if (!target.datasource) {
                                 target.datasource = config_1.default.defaultDatasource;
                             }
                         });

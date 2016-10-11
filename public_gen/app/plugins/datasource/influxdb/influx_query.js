@@ -1,6 +1,6 @@
 ///<reference path="../../../headers/common.d.ts" />
-System.register(['lodash', './query_part'], function(exports_1) {
-    var lodash_1, query_part_1;
+System.register(['lodash', './query_part', 'app/core/utils/kbn'], function(exports_1) {
+    var lodash_1, query_part_1, kbn_1;
     var InfluxQuery;
     return {
         setters:[
@@ -9,6 +9,9 @@ System.register(['lodash', './query_part'], function(exports_1) {
             },
             function (query_part_1_1) {
                 query_part_1 = query_part_1_1;
+            },
+            function (kbn_1_1) {
+                kbn_1 = kbn_1_1;
             }],
         execute: function() {
             InfluxQuery = (function () {
@@ -141,7 +144,7 @@ System.register(['lodash', './query_part'], function(exports_1) {
                             value = this.templateSrv.replace(value, this.scopedVars);
                         }
                         if (operator !== '>' && operator !== '<') {
-                            value = "'" + value.replace('\\', '\\\\') + "'";
+                            value = "'" + value.replace(/\\/g, '\\\\') + "'";
                         }
                     }
                     else if (interpolate) {
@@ -166,12 +169,24 @@ System.register(['lodash', './query_part'], function(exports_1) {
                     }
                     return policy + measurement;
                 };
+                InfluxQuery.prototype.interpolateQueryStr = function (value, variable, defaultFormatFn) {
+                    // if no multi or include all do not regexEscape
+                    if (!variable.multi && !variable.includeAll) {
+                        return value;
+                    }
+                    if (typeof value === 'string') {
+                        return kbn_1.default.regexEscape(value);
+                    }
+                    var escapedValues = lodash_1.default.map(value, kbn_1.default.regexEscape);
+                    return escapedValues.join('|');
+                };
+                ;
                 InfluxQuery.prototype.render = function (interpolate) {
                     var _this = this;
                     var target = this.target;
                     if (target.rawQuery) {
                         if (interpolate) {
-                            return this.templateSrv.replace(target.query, this.scopedVars, 'regex');
+                            return this.templateSrv.replace(target.query, this.scopedVars, this.interpolateQueryStr);
                         }
                         else {
                             return target.query;
@@ -213,6 +228,13 @@ System.register(['lodash', './query_part'], function(exports_1) {
                         query += ' fill(' + target.fill + ')';
                     }
                     return query;
+                };
+                InfluxQuery.prototype.renderAdhocFilters = function (filters) {
+                    var _this = this;
+                    var conditions = lodash_1.default.map(filters, function (tag, index) {
+                        return _this.renderTagCondition(tag, index, false);
+                    });
+                    return conditions.join(' ');
                 };
                 return InfluxQuery;
             })();

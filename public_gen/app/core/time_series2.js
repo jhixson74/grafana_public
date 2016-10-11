@@ -35,6 +35,7 @@ System.register(['app/core/utils/kbn', 'lodash'], function(exports_1) {
                     this.stats = {};
                     this.legend = true;
                     this.unit = opts.unit;
+                    this.hasMsResolution = this.isMsResolutionNeeded();
                 }
                 TimeSeries.prototype.applySeriesOverrides = function (overrides) {
                     this.lines = {};

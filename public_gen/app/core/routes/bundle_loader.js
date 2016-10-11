@@ -6,16 +6,16 @@ System.register([], function(exports_1) {
         execute: function() {
             BundleLoader = (function () {
                 function BundleLoader(bundleName) {
-                    var _this = this;
+                    var defer = null;
                     this.lazy = ["$q", "$route", "$rootScope", function ($q, $route, $rootScope) {
-                            if (_this.loadingDefer) {
-                                return _this.loadingDefer.promise;
+                            if (defer) {
+                                return defer.promise;
                             }
-                            _this.loadingDefer = $q.defer();
+                            defer = $q.defer();
                             System.import(bundleName).then(function () {
-                                _this.loadingDefer.resolve();
+                                defer.resolve();
                             });
-                            return _this.loadingDefer.promise;
+                            return defer.promise;
                         }];
                 }
                 return BundleLoader;

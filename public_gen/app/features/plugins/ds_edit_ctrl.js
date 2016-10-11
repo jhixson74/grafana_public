@@ -77,7 +77,7 @@ System.register(['angular', 'lodash', 'app/core/config', 'app/core/core'], funct
                     this.hasDashboards = false;
                     return this.backendSrv.get('/api/plugins/' + this.current.type + '/settings').then(function (pluginInfo) {
                         _this.datasourceMeta = pluginInfo;
-                        _this.hasDashboards = lodash_1.default.findWhere(pluginInfo.includes, { type: 'dashboard' });
+                        _this.hasDashboards = lodash_1.default.find(pluginInfo.includes, { type: 'dashboard' });
                     });
                 };
                 DataSourceEditCtrl.prototype.updateFrontendSettings = function () {
@@ -116,7 +116,7 @@ System.register(['angular', 'lodash', 'app/core/config', 'app/core/core'], funct
                         }
                     });
                 };
-                DataSourceEditCtrl.prototype.saveChanges = function (test) {
+                DataSourceEditCtrl.prototype.saveChanges = function () {
                     var _this = this;
                     if (!this.editForm.$valid) {
                         return;
@@ -161,8 +161,18 @@ System.register(['angular', 'lodash', 'app/core/config', 'app/core/core'], funct
             core_1.coreModule.controller('DataSourceEditCtrl', DataSourceEditCtrl);
             core_1.coreModule.directive('datasourceHttpSettings', function () {
                 return {
-                    scope: { current: "=" },
-                    templateUrl: 'public/app/features/plugins/partials/ds_http_settings.html'
+                    scope: {
+                        current: "=",
+                        suggestUrl: "@",
+                    },
+                    templateUrl: 'public/app/features/plugins/partials/ds_http_settings.html',
+                    link: {
+                        pre: function ($scope, elem, attrs) {
+                            $scope.getSuggestUrls = function () {
+                                return [$scope.suggestUrl];
+                            };
+                        }
+                    }
                 };
             });
         }

@@ -54,7 +54,6 @@ System.register(['lodash', 'angular', 'moment', 'app/core/utils/rangeutil', './i
                     this.$rootScope = $rootScope;
                     this.timeSrv = timeSrv;
                     $scope.ctrl = this;
-                    $rootScope.onAppEvent('zoom-out', function () { return _this.zoom(2); }, $scope);
                     $rootScope.onAppEvent('shift-time-forward', function () { return _this.move(1); }, $scope);
                     $rootScope.onAppEvent('shift-time-backward', function () { return _this.move(-1); }, $scope);
                     $rootScope.onAppEvent('refresh', function () { return _this.init(); }, $scope);
@@ -64,8 +63,9 @@ System.register(['lodash', 'angular', 'moment', 'app/core/utils/rangeutil', './i
                 TimePickerCtrl.prototype.init = function () {
                     this.panel = this.dashboard.timepicker;
                     lodash_1.default.defaults(this.panel, TimePickerCtrl.defaults);
+                    this.firstDayOfWeek = moment_1.default.localeData().firstDayOfWeek();
                     var time = angular_1.default.copy(this.timeSrv.timeRange());
-                    var timeRaw = angular_1.default.copy(this.timeSrv.timeRange(false));
+                    var timeRaw = angular_1.default.copy(time.raw);
                     if (!this.dashboard.isTimezoneUtc()) {
                         time.from.local();
                         time.to.local();
@@ -90,17 +90,7 @@ System.register(['lodash', 'angular', 'moment', 'app/core/utils/rangeutil', './i
                     }
                 };
                 TimePickerCtrl.prototype.zoom = function (factor) {
-                    var range = this.timeSrv.timeRange();
-                    var timespan = (range.to.valueOf() - range.from.valueOf());
-                    var center = range.to.valueOf() - timespan / 2;
-                    var to = (center + (timespan * factor) / 2);
-                    var from = (center - (timespan * factor) / 2);
-                    if (to > Date.now() && range.to <= Date.now()) {
-                        var offset = to - Date.now();
-                        from = from - offset;
-                        to = Date.now();
-                    }
-                    this.timeSrv.setTime({ from: moment_1.default.utc(from), to: moment_1.default.utc(to) });
+                    this.$rootScope.appEvent('zoom-out', 2);
                 };
                 TimePickerCtrl.prototype.move = function (direction) {
                     var range = this.timeSrv.timeRange();

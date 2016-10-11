@@ -7,6 +7,7 @@ System.register(['./dashboard_loaders', 'app/core/core_module', './bundle_loader
         var loadOrgBundle = new bundle_loader_1.BundleLoader('app/features/org/all');
         var loadPluginsBundle = new bundle_loader_1.BundleLoader('app/features/plugins/all');
         var loadAdminBundle = new bundle_loader_1.BundleLoader('app/features/admin/admin');
+        var loadAlertingBundle = new bundle_loader_1.BundleLoader('app/features/alerting/all');
         $routeProvider
             .when('/', {
             templateUrl: 'public/app/partials/dashboard.html',
@@ -23,11 +24,6 @@ System.register(['./dashboard_loaders', 'app/core/core_module', './bundle_loader
             .when('/dashboard-solo/:type/:slug', {
             templateUrl: 'public/app/features/panel/partials/soloPanel.html',
             controller: 'SoloPanelCtrl',
-            pageClass: 'page-dashboard',
-        })
-            .when('/dashboard-import/:file', {
-            templateUrl: 'public/app/partials/dashboard.html',
-            controller: 'DashFromImportCtrl',
             reloadOnSearch: false,
             pageClass: 'page-dashboard',
         })
@@ -37,8 +33,12 @@ System.register(['./dashboard_loaders', 'app/core/core_module', './bundle_loader
             reloadOnSearch: false,
             pageClass: 'page-dashboard',
         })
-            .when('/import/dashboard', {
-            templateUrl: 'public/app/features/dashboard/partials/import.html',
+            .when('/dashboards/list', {
+            templateUrl: 'public/app/features/dashboard/partials/dash_list.html',
+            controller: 'DashListCtrl',
+        })
+            .when('/dashboards/migrate', {
+            templateUrl: 'public/app/features/dashboard/partials/migrate.html',
             controller: 'DashboardImportCtrl',
         })
             .when('/datasources', {
@@ -180,13 +180,37 @@ System.register(['./dashboard_loaders', 'app/core/core_module', './bundle_loader
             controllerAs: 'ctrl',
             resolve: loadPluginsBundle,
         })
-            .when('/global-alerts', {
-            templateUrl: 'public/app/features/dashboard/partials/globalAlerts.html',
-        })
             .when('/styleguide/:page?', {
             controller: 'StyleGuideCtrl',
             controllerAs: 'ctrl',
             templateUrl: 'public/app/features/styleguide/styleguide.html',
+        })
+            .when('/alerting', {
+            redirectTo: '/alerting/list'
+        })
+            .when('/alerting/list', {
+            templateUrl: 'public/app/features/alerting/partials/alert_list.html',
+            controller: 'AlertListCtrl',
+            controllerAs: 'ctrl',
+            resolve: loadAlertingBundle,
+        })
+            .when('/alerting/notifications', {
+            templateUrl: 'public/app/features/alerting/partials/notifications_list.html',
+            controller: 'AlertNotificationsListCtrl',
+            controllerAs: 'ctrl',
+            resolve: loadAlertingBundle,
+        })
+            .when('/alerting/notification/new', {
+            templateUrl: 'public/app/features/alerting/partials/notification_edit.html',
+            controller: 'AlertNotificationEditCtrl',
+            controllerAs: 'ctrl',
+            resolve: loadAlertingBundle,
+        })
+            .when('/alerting/notification/:id/edit', {
+            templateUrl: 'public/app/features/alerting/partials/notification_edit.html',
+            controller: 'AlertNotificationEditCtrl',
+            controllerAs: 'ctrl',
+            resolve: loadAlertingBundle,
         })
             .otherwise({
             templateUrl: 'public/app/partials/error.html',

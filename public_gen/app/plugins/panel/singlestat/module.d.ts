@@ -10,6 +10,9 @@ declare class SingleStatCtrl extends MetricsPanelCtrl {
     fontSizes: any[];
     unitFormats: any[];
     invalidGaugeRange: boolean;
+    panel: any;
+    events: any;
+    valueNameOptions: any[];
     panelDefaults: {
         links: any[];
         datasource: any;
@@ -26,6 +29,16 @@ declare class SingleStatCtrl extends MetricsPanelCtrl {
             op: string;
             text: string;
         }[];
+        mappingTypes: {
+            name: string;
+            value: number;
+        }[];
+        rangeMaps: {
+            from: string;
+            to: string;
+            text: string;
+        }[];
+        mappingType: number;
         nullPointMode: string;
         valueName: string;
         prefixFontSize: string;
@@ -62,6 +75,8 @@ declare class SingleStatCtrl extends MetricsPanelCtrl {
     setValues(data: any): void;
     removeValueMap(map: any): void;
     addValueMap(): void;
+    removeRangeMap(rangeMap: any): void;
+    addRangeMap(): void;
     link(scope: any, elem: any, attrs: any, ctrl: any): void;
 }
 declare function getColorForValue(data: any, value: any): any;

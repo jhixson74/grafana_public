@@ -88,10 +88,7 @@ System.register(['./lexer'], function(exports_1) {
                     return node;
                 },
                 metricExpression: function () {
-                    if (!this.match('templateStart') &&
-                        !this.match('identifier') &&
-                        !this.match('number') &&
-                        !this.match('{')) {
+                    if (!this.match('templateStart') && !this.match('identifier') && !this.match('number') && !this.match('{')) {
                         return null;
                     }
                     var node = {

@@ -205,6 +205,16 @@ System.register(['test/lib/common', '../influx_query'], function(exports_1) {
                         common_1.expect(query.target.select[0].length).to.be(3);
                         common_1.expect(query.target.select[0][2].type).to.be('math');
                     });
+                    common_1.describe('when render adhoc filters', function () {
+                        common_1.it('should generate correct query segment', function () {
+                            var query = new influx_query_1.default({ measurement: 'cpu', }, templateSrv, {});
+                            var queryText = query.renderAdhocFilters([
+                                { key: 'key1', operator: '=', value: 'value1' },
+                                { key: 'key2', operator: '!=', value: 'value2' },
+                            ]);
+                            common_1.expect(queryText).to.be('"key1" = \'value1\' AND "key2" != \'value2\'');
+                        });
+                    });
                 });
             });
         }

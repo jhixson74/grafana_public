@@ -32,7 +32,7 @@ System.register(['angular', 'lodash'], function(exports_1) {
                         });
                     });
                     return this.$q.all(promises).then(function (results) {
-                        return { data: lodash_1.default.flatten(lodash_1.default.pluck(results, 'data')) };
+                        return { data: lodash_1.default.flatten(lodash_1.default.map(results, 'data')) };
                     });
                 };
                 return MixedDatasource;
